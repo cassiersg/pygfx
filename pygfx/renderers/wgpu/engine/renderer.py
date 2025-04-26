@@ -727,17 +727,20 @@ class WgpuRenderer(RootEventHandler, Renderer):
         self, camera: Camera, physical_size, logical_size, ndc_offset
     ):
         # Update the stdinfo buffer's data
-        stdinfo_data = self._shared.uniform_buffer.data
-        stdinfo_data["cam_transform"] = camera.world.inverse_matrix.T
-        stdinfo_data["cam_transform_inv"] = camera.world.matrix.T
-        stdinfo_data["projection_transform"] = camera.projection_matrix.T
-        stdinfo_data["projection_transform_inv"] = camera.projection_matrix_inverse.T
-        # stdinfo_data["ndc_to_world"].flat = la.mat_inverse(stdinfo_data["cam_transform"] @ stdinfo_data["projection_transform"])
-        stdinfo_data["ndc_offset"] = ndc_offset
-        stdinfo_data["physical_size"] = physical_size
-        stdinfo_data["logical_size"] = logical_size
-        # Upload to GPU
-        self._shared.uniform_buffer.update_full()
+        stdinfo_data = self._shared.uniform_data
+        new_stdinfo_data = stdinfo_data.copy()
+        new_stdinfo_data["cam_transform"] = camera.world.inverse_matrix.T
+        new_stdinfo_data["cam_transform_inv"] = camera.world.matrix.T
+        new_stdinfo_data["projection_transform"] = camera.projection_matrix.T
+        new_stdinfo_data["projection_transform_inv"] = (
+            camera.projection_matrix_inverse.T
+        )
+        # new_stdinfo_data["ndc_to_world"].flat = la.mat_inverse(stdinfo_data["cam_transform"] @ stdinfo_data["projection_transform"])
+        new_stdinfo_data["ndc_offset"] = ndc_offset
+        new_stdinfo_data["physical_size"] = physical_size
+        new_stdinfo_data["logical_size"] = logical_size
+        if new_stdinfo_data.tobytes() != stdinfo_data.tobytes():
+            self._shared.uniform_data = new_stdinfo_data
 
     # Picking
 

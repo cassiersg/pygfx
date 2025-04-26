@@ -93,9 +93,8 @@ class Shared(Trackable):
         # Create a uniform buffer for std info
         # Stored on _store so if we'd ever swap it out for another buffer,
         # the pipeline automatically update.
-        self._store.uniform_buffer = Buffer(
-            array_from_shadertype(stdinfo_uniform_type), force_contiguous=True
-        )
+        self._store.uniform_data = array_from_shadertype(stdinfo_uniform_type)
+        self._store.uniform_buffer = Buffer(self.uniform_data, force_contiguous=True)
         self._store.uniform_buffer._wgpu_usage |= wgpu.BufferUsage.UNIFORM
 
         # Init glyph atlas texture
@@ -125,6 +124,22 @@ class Shared(Trackable):
     def device(self):
         """The shared WGPU device object."""
         return self._device
+
+    @property
+    def uniform_data(self):
+        """The shared uniform data in which the renderer puts
+        information about the canvas and camera (same content as uniform_buffer).
+        """
+        return self._store.uniform_data
+
+    @uniform_data.setter
+    def uniform_data(self, value):
+        """The shared uniform data in which the renderer puts
+        information about the canvas and camera (same content as uniform_buffer).
+        """
+        value.flags.writeable = False
+        self._store.uniform_data = value
+        self._store.uniform_buffer.set_data(value)
 
     @property
     def uniform_buffer(self):
