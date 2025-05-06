@@ -456,12 +456,15 @@ class PerspectiveCamera(Camera):
         extent = radius * 2 * scale
 
         # Apply
-        distance = fov_distance_factor(self.fov) * extent
+        # Need a non-zero distance for look_at to work when fov==0.0.
+        distance = 1.0 if self.fov == 0.0 else fov_distance_factor(self.fov) * extent
         self.local.position = view_pos - view_dir * distance
         self.look_at(view_pos)
+        if self.fov == 0.0:
+            self.local.position = view_pos
         self._set_extent(extent)
 
-        if match_aspect and bbox is not None:
+        if self.fov != 0 and match_aspect and bbox is not None:
             # Re-calculate width and height using the aligned bbox, so that the
             # contents keep fitting snugly as the viewport is resized.
             bbox = la.aabb_transform(bbox, self.world.inverse_matrix)
@@ -562,5 +565,5 @@ def fov_distance_factor(fov):
         fov_rad = fov * pi / 180
         factor = 0.5 / tan(0.5 * fov_rad)
     else:
-        factor = 1.0
+        factor = 0.0
     return factor
